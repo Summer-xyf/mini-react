@@ -9,3 +9,11 @@ function workLoop(deadLine) {
     requestIdleCallback(workLoop)
 }
 requestIdleCallback(workLoop)
+
+function *name() {
+    yield 1;
+    yield 2
+    yield 3
+}
+const na = name()
+na.next()

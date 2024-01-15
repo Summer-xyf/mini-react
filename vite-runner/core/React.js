@@ -27,6 +27,7 @@ function render(el, container) {
             children: [el]
         }
     }
+    root = nextWork
     // const dom = el.type === "TEXT_ELEMENT"
     //     ? document.createTextNode('')
     //     : document.createElement(el.type);
@@ -44,7 +45,7 @@ function render(el, container) {
 
 }
 
-let nextWork
+let nextWork, root
 function workLoop(deadLine) {
     let shouldYieId = false
     while (!shouldYieId && nextWork) {
@@ -54,9 +55,24 @@ function workLoop(deadLine) {
         // 剩余毫秒数 〉1 - 渲染
         shouldYieId = deadLine.timeRemaining() < 1;
     }
+    // 在nextWork为null时，代表链表返回null结束
+    if (!nextWork && root) {
+        commitDom()
+    }
     requestIdleCallback(workLoop)
 }
 
+// 实现统一提交
+function commitDom() {
+    commitFiber(root.child)
+    root = null
+}
+function commitFiber(fiber) {
+    if(!fiber) return
+    fiber.parent.dom.append(fiber.dom)
+    commitFiber(fiber.child)
+    commitFiber(fiber.sibling)
+}
 function performWorkOfUnit(work) {
     if (!work.dom) {
         // 1.创建dom
@@ -64,7 +80,7 @@ function performWorkOfUnit(work) {
             ? document.createTextNode('')
             : document.createElement(work.type));
 
-        work.parent.dom.append(dom)
+        // work.parent.dom.append(dom)
 
         // 2.处理props
         Object.keys(work.props).forEach(key => {
